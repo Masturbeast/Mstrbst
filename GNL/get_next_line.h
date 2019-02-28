@@ -6,14 +6,14 @@
 /*   By: atep <marvin@42.fr>                        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2019/02/19 14:49:57 by atep              #+#    #+#             */
-/*   Updated: 2019/02/26 16:06:09 by atep             ###   ########.fr       */
+/*   Updated: 2019/02/27 20:02:44 by atep             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef GET_NEXT_LINE_H
 
 # define GET_NEXT_LINE_H
-# define BUFF_SIZE  1
+# define BUFF_SIZE 999
 # include <stdlib.h>
 # include <unistd.h>
 # include <sys/types.h>

@@ -6,7 +6,7 @@
 /*   By: atep <marvin@42.fr>                        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2019/02/19 14:49:51 by atep              #+#    #+#             */
-/*   Updated: 2019/02/26 16:10:29 by atep             ###   ########.fr       */
+/*   Updated: 2019/02/28 10:32:04 by atep             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -36,95 +36,73 @@ t_tab	*ft_init_struct(int fd, t_tab **lst)
 	return (tmp);
 }
 
-char	*ft_strdupcat(char *str, char **line)
-{
-	char	*tmp;
-	int		size;
-
-	size = ft_strlen(str) - ft_strlen(ft_strchr(str, '\n'));
-	line[0] = ft_strsub(str, 0, size);
-	tmp = ft_strsub(str, size + 1, ft_strlen(str));
-	free(str);
-	if (ft_strlen(tmp) != 0)
-		str = ft_strdup(tmp);
-	else
-		str = NULL;
-	free(tmp);
-	return (str);
-}
-
-char	*ft_catfrombuff(char *buff, char *str, char **line)
+int		ft_get_line(char *buff, char **str, char **line)
 {
 	char	*tmp;
 
-	if (str == NULL)
-		str = ft_strdup(buff);
-	else
+	tmp = *str;
+	if ((*str = ft_strjoin(tmp, buff)) == NULL)
 	{
-		tmp = ft_strdup(str);
-		free(str);
-		str = ft_strjoin(tmp, buff);
+		*str = tmp;
+		return (-1);
+	}
+	if (tmp)
 		free(tmp);
+	if ((tmp = ft_strchr(*str, '\n')) != NULL)
+	{
+		if ((*line = ft_strsub(*str, 0, tmp - (*str))) == NULL)
+			return (-1);
+		buff = *str;
+		if (tmp[1] && (*str = ft_strdup(tmp + 1)) == NULL)
+			return (-1);
+		else if (!tmp[1])
+			*str = NULL;
+		free(buff);
+		return (1);
 	}
-	if (ft_strchr(str, '\n') != NULL)
-		str = ft_strdupcat(str, &line[0]);
-	else
-		line[0] = NULL;
-	return (str);
+	return (0);
 }
 
-char	*ft_endofline(char *str, char **line)
+int		ft_endoffile(char **str, char **line)
 {
-	if (str != NULL)
+	if (!ft_strlen(*str))
 	{
-		if (ft_strchr(str, '\n') != NULL)
-			str = ft_strdupcat(str, &line[0]);
-		else if (str != NULL)
-		{
-			line[0] = ft_strdup(str);
-			free(str);
-			str = NULL;
-		}
-		else
-			line[0] = NULL;
+		free(*str);
+		*str = NULL;
+		return (0);
 	}
+	if (ft_strchr(*str, '\n') != NULL)
+		ft_get_line(NULL, str, line);
 	else
-		line[0] = NULL;
-	return (str);
+	{
+		if ((*line = ft_strdup(*str)) == NULL)
+			return (-1);
+		free(*str);
+		*str = NULL;
+	}
+	return (1);
 }
 
 int		get_next_line(const int fd, char **line)
 {
-	static t_tab	*lst;
-	int				i;
+	static t_tab	*lst = NULL;
+	long			i;
 	char			buff[BUFF_SIZE + 1];
 	t_tab			*tmp;
 	
-//	printf("0\n");
 	if (fd < 0 || !line || read(fd, buff, 0) < 0)
 		return (-1);
-//	printf("1\n");
-	tmp = ft_init_struct(fd, &lst);
-//	printf("2\n");
+	if (!(tmp = ft_init_struct(fd, &lst)))
+		return (-1);
+	ft_bzero(buff, BUFF_SIZE + 1);
 	while ((i = read(fd, buff, BUFF_SIZE)) > 0)
 	{
-//		printf("3\n");
 		buff[i] = '\0';
-//		printf("4\n");
-		tmp->str = ft_catfrombuff(buff, tmp->str, &line[0]);
-		if(line[0] != NULL)
-			return (1);
-//		printf("5\n");
-//		printf("6\n");
+		if ((i = ft_get_line(buff, &tmp->str, line)))
+			return ((int)i);
+		ft_bzero(buff, BUFF_SIZE + 1);
 	}
-//	printf("7\n");
-	if (i == -1)
-		return (i);
-	tmp->str = ft_endofline(tmp->str, &line[0]);
-//	printf("8\n");
-	//printf("line[0] = %s\n", line[0]);
-	if (line[0] != NULL)
-		return (1);
-//	printf("9\n");
-	return (0);
+	if (i == 0 && tmp->str != NULL)
+		return (ft_endoffile(&tmp->str, line));	
+	return ((i < 0) ? -1 : 0);
 }
